@@ -115,7 +115,7 @@ QtObject {
         case Qt.Key_Enter:
             {
                 const shifted = (event.modifiers & Qt.ShiftModifier) !== 0;
-                const paste = shifted ? !SettingsData.clipboardEnterToPaste : SettingsData.clipboardEnterToPaste;
+                const paste = shifted ? !modal.enterToPaste : modal.enterToPaste;
                 if (paste) {
                     modal.pasteSelected();
                 } else {
@@ -247,7 +247,7 @@ QtObject {
             case Qt.Key_Return:
             case Qt.Key_Enter:
                 if (ClipboardService.keyboardNavigationActive) {
-                    if (SettingsData.clipboardEnterToPaste) {
+                    if (modal.enterToPaste) {
                         copySelected();
                     } else {
                         modal.pasteSelected();
@@ -262,7 +262,7 @@ QtObject {
             switch (event.key) {
             case Qt.Key_Return:
             case Qt.Key_Enter:
-                if (SettingsData.clipboardEnterToPaste) {
+                if (modal.enterToPaste) {
                     modal.pasteSelected();
                 } else {
                     copySelected();

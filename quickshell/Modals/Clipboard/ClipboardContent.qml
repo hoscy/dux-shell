@@ -14,6 +14,19 @@ Item {
     property alias searchField: searchField
     property alias clipboardListView: clipboardListView
 
+    readonly property bool splitLayout: SettingsData.clipboardLayout === "split" && !modal.popout && width >= Theme.launcherWidthWide
+    readonly property bool contentLive: visible && modal.mode === "history" && (modal.surfaceHost?.shouldBeVisible ?? true)
+    onContentLiveChanged: {
+        if (contentLive && splitLayout)
+            ClipboardService.keyboardNavigationActive = true;
+    }
+    onSplitLayoutChanged: {
+        if (contentLive && splitLayout)
+            ClipboardService.keyboardNavigationActive = true;
+    }
+    readonly property string currentTab: modal.activeTab
+    onCurrentTabChanged: resetScroll.schedule()
+
     readonly property var entries: modal.activeTab === "saved" ? modal.pinnedEntries : modal.unpinnedEntries
 
     readonly property var filterOptions: [I18n.tr("All"), I18n.tr("Text"), I18n.tr("Long Text"), I18n.tr("Image", "noun, clipboard entry type and filter option")]
@@ -77,13 +90,6 @@ Item {
 
     anchors.fill: parent
 
-    Connections {
-        target: clipboardContent.modal
-        function onActiveTabChanged() {
-            resetScroll.schedule();
-        }
-    }
-
     DeferredAction {
         id: resetScroll
         onTriggered: {
@@ -122,7 +128,7 @@ Item {
 
         ClipboardHeader {
             width: parent.width
-            visible: !modal.popout
+            visible: !modal.popout && !clipboardContent.splitLayout
             modal: clipboardContent.modal
         }
 
@@ -224,16 +230,16 @@ Item {
         anchors.topMargin: PopoutMetrics.contentGap
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: keyboardHintsLoader.top
+        anchors.bottom: splitFooter.visible ? splitFooter.top : keyboardHintsLoader.top
         anchors.leftMargin: PopoutMetrics.contentPadding
-        anchors.rightMargin: PopoutMetrics.contentPadding
+        anchors.rightMargin: clipboardContent.splitLayout ? PopoutMetrics.contentPadding + (parent.width - PopoutMetrics.contentPadding * 2 - Theme.spacingM) / ClipboardConstants.goldenRatio + Theme.spacingM : PopoutMetrics.contentPadding
         anchors.bottomMargin: keyboardHintsLoader.active ? PopoutMetrics.contentGap : 0
         clip: true
 
         DListView {
             id: clipboardListView
             reuseItems: true
-            highlightSelection: clipboardContent.modal.keyboardNavigationActive && clipboardContent.modal.selectedIndex >= 0
+            highlightSelection: (clipboardContent.splitLayout || clipboardContent.modal.keyboardNavigationActive) && clipboardContent.modal.selectedIndex >= 0
             anchors.fill: parent
             // one model per tab; a shared model diffs the whole list on every tab switch
             model: clipboardContent.modal.activeTab === "saved" ? savedModel : recentsModel
@@ -274,10 +280,11 @@ Item {
                 required property var modelData
 
                 width: clipboardListView.width
-                height: ClipboardConstants.itemHeight
+                compact: clipboardContent.splitLayout
+                height: compact ? Theme.listItemHeight : ClipboardConstants.itemHeight
                 entry: modelData
                 itemIndex: index
-                isSelected: clipboardContent.modal?.keyboardNavigationActive && index === clipboardContent.modal.selectedIndex
+                isSelected: (clipboardContent.splitLayout || clipboardContent.modal?.keyboardNavigationActive) && index === clipboardContent.modal.selectedIndex
                 modal: clipboardContent.modal
                 listView: clipboardListView
                 onCopyRequested: clipboardContent.modal.copyEntry(modelData)
@@ -302,13 +309,83 @@ Item {
     }
 
     Loader {
+        anchors.top: listContainer.top
+        anchors.left: listContainer.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.right: parent.right
+        anchors.rightMargin: PopoutMetrics.contentPadding
+        anchors.bottom: listContainer.bottom
+        active: clipboardContent.splitLayout && clipboardContent.contentLive
+        sourceComponent: ClipboardDetailPane {
+            modal: clipboardContent.modal
+        }
+    }
+
+    Item {
+        id: splitFooter
+        visible: clipboardContent.splitLayout
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: PopoutMetrics.contentPadding
+        anchors.rightMargin: PopoutMetrics.contentPadding
+        anchors.bottom: keyboardHintsLoader.top
+        anchors.bottomMargin: keyboardHintsLoader.active ? Theme.spacingS : 0
+        height: visible ? Theme.buttonHeightXS : 0
+
+        Row {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Theme.spacingS
+
+            DActionButton {
+                Keys.forwardTo: [clipboardContent.modal.modalFocusScope]
+                iconName: "keyboard"
+                tooltipText: I18n.tr("Keyboard shortcuts")
+                iconColor: clipboardContent.modal.showKeyboardHints ? Theme.primary : Theme.surfaceVariantText
+                onClicked: clipboardContent.modal.showKeyboardHints = !clipboardContent.modal.showKeyboardHints
+            }
+
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: I18n.tr("Clipboard History")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.surfaceVariantText
+            }
+
+            DButton {
+                Keys.forwardTo: [clipboardContent.modal.modalFocusScope]
+                text: I18n.tr("Settings")
+                buttonHeight: Theme.buttonHeightXS
+                minimumWidth: 0
+                horizontalPadding: Theme.spacingS
+                backgroundColor: "transparent"
+                textColor: Theme.surfaceVariantText
+                onClicked: clipboardContent.modal.openSettings()
+            }
+        }
+
+        DButton {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            Keys.forwardTo: [clipboardContent.modal.modalFocusScope]
+            text: I18n.tr("Paste") + "  ↵"
+            tooltipText: I18n.tr("Paste into the active application")
+            buttonHeight: Theme.buttonHeightXS
+            backgroundColor: "transparent"
+            textColor: Theme.surfaceText
+            enabled: clipboardContent.modal.currentEntry !== null && clipboardContent.modal.pasteAvailable
+            onClicked: clipboardContent.modal.pasteEntry(clipboardContent.modal.currentEntry)
+        }
+    }
+
+    Loader {
         id: keyboardHintsLoader
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.leftMargin: PopoutMetrics.contentPadding
         anchors.rightMargin: PopoutMetrics.contentPadding
-        anchors.bottomMargin: PopoutMetrics.contentPadding
+        anchors.bottomMargin: clipboardContent.splitLayout ? Theme.spacingS : PopoutMetrics.contentPadding
         active: modal.showKeyboardHints
         height: item ? item.implicitHeight : 0
 
@@ -321,7 +398,7 @@ Item {
 
         sourceComponent: ClipboardKeyboardHints {
             pasteAvailable: modal.pasteAvailable
-            enterToPaste: SettingsData.clipboardEnterToPaste
+            enterToPaste: modal.enterToPaste
         }
     }
 }

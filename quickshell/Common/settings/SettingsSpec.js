@@ -1608,6 +1608,9 @@ var LOCAL_SPEC = {
     clipboardUseOverlayLayer: {
         def: false
     },
+    clipboardLayout: {
+        def: "list"
+    },
     clipboardSize: {
         def: "compact"
     },

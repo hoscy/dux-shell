@@ -23,6 +23,7 @@ FocusScope {
 
     readonly property bool clipboardAvailable: ClipboardService.clipboardAvailable
     readonly property bool pasteAvailable: ClipboardService.pasteAvailable
+    readonly property bool enterToPaste: historyContent.splitLayout || SettingsData.clipboardEnterToPaste
     readonly property int totalCount: ClipboardService.totalCount
     readonly property var clipboardEntries: ClipboardService.clipboardEntries
     readonly property var pinnedEntries: ClipboardService.pinnedEntries
@@ -264,6 +265,8 @@ FocusScope {
         historyContent.closeFilterMenu();
         activeFilter = SettingsData.clipboardRememberTypeFilter ? SettingsData.clipboardTypeFilter : "all";
         ClipboardService.reset();
+        if (historyContent.splitLayout)
+            ClipboardService.keyboardNavigationActive = true;
         keyboardController.reset();
     }
 

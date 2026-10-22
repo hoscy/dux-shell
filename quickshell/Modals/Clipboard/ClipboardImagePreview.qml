@@ -1,9 +1,11 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Window
 import Quickshell.Widgets
 import qs.Common
 import qs.Services
+import "../../Services/ClipboardImageSizing.js" as ImageSizing
 import qs.DCommon.Widgets
 
 ClippingRectangle {
@@ -124,9 +126,11 @@ ClippingRectangle {
                 asynchronous: true
                 cache: false
                 smooth: true
+                mipmap: false
                 fillMode: Image.PreserveAspectFit
-                sourceSize.width: Math.round(frame.width)
-                sourceSize.height: Math.round(frame.height)
+                readonly property real renderPixelRatio: Window.window?.devicePixelRatio ?? Screen.devicePixelRatio
+                readonly property var decodeSize: ImageSizing.sourceSize(root.entry?.preview, width, height, renderPixelRatio)
+                sourceSize: Qt.size(decodeSize.width, decodeSize.height)
                 visible: status === Image.Ready && source != ""
             }
 

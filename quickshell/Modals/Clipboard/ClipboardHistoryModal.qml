@@ -69,11 +69,12 @@ DModal {
     }
 
     readonly property bool clipboardAvailable: ClipboardService.clipboardAvailable
+    readonly property bool splitLayout: SettingsData.clipboardLayout === "split"
 
     visible: false
     keepContentLoaded: true
     useOverlayLayer: SettingsData.clipboardUseOverlayLayer
-    modalWidth: Math.min(ClipboardConstants.sizeWidth(SettingsData.clipboardSize), screenWidth - Theme.spacingXL * 2)
+    modalWidth: Math.min(splitLayout ? Math.max(Theme.launcherWidthLarge, ClipboardConstants.sizeWidth(SettingsData.clipboardSize)) : ClipboardConstants.sizeWidth(SettingsData.clipboardSize), screenWidth - Theme.spacingXL * 2)
     modalHeight: Math.min(ClipboardConstants.sizeHeight(SettingsData.clipboardSize), screenHeight - Theme.spacingXL * 2)
     backgroundColor: Theme.floatingWindowSurface
     enableShadow: true

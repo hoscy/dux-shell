@@ -457,6 +457,19 @@ Item {
             iconName: "tune"
 
             SettingsButtonGroupRow {
+                tab: "clipboard"
+                tags: ["clipboard", "layout", "preview"]
+                settingKey: "clipboardLayout"
+                text: I18n.tr("Layout")
+                model: [I18n.tr("List"), I18n.tr("Split View")]
+                currentIndex: SettingsData.clipboardLayout === "split" ? 1 : 0
+                onSelectionChanged: (index, selected) => {
+                    if (selected)
+                        SettingsData.set("clipboardLayout", index === 1 ? "split" : "list");
+                }
+            }
+
+            SettingsButtonGroupRow {
                 readonly property var sizes: ["micro", "compact", "medium", "large"]
 
                 tab: "clipboard"

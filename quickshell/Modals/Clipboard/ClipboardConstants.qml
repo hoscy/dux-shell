@@ -10,6 +10,7 @@ Singleton {
     readonly property int longTextThreshold: 200
     readonly property int modalWidth: 650
     readonly property int modalHeight: 550
+    readonly property real goldenRatio: (1 + Math.sqrt(5)) / 2
     readonly property int popoutWidth: 550
     readonly property int popoutHeight: 500
     readonly property int itemHeight: 72

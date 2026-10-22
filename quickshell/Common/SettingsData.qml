@@ -115,6 +115,7 @@ Singleton {
     property bool clipboardEnterToPaste: Spec.SPEC.clipboardEnterToPaste.def
     property bool clipboardRememberTypeFilter: Spec.SPEC.clipboardRememberTypeFilter.def
     property bool clipboardUseOverlayLayer: Spec.SPEC.clipboardUseOverlayLayer.def
+    property string clipboardLayout: Spec.SPEC.clipboardLayout.def
     property string clipboardSize: Spec.SPEC.clipboardSize.def
     property string clipboardTypeFilter: Spec.SPEC.clipboardTypeFilter.def
     property var clipboardVisibleEntryActions: Spec.SPEC.clipboardVisibleEntryActions.def

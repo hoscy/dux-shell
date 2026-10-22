@@ -13,6 +13,7 @@ ClippingRectangle {
     required property var modal
     required property var listView
     required property int itemIndex
+    property real rowHeight: ClipboardConstants.itemHeight
     property bool disposed: false
     property color iconColor: Theme.primary
 
@@ -187,10 +188,10 @@ ClippingRectangle {
                 return;
             }
 
-            const itemY = itemIndex * (ClipboardConstants.itemHeight + listView.spacing);
+            const itemY = itemIndex * (thumbnail.rowHeight + listView.spacing);
             const viewTop = listView.contentY;
             const viewBottom = viewTop + listView.height;
-            isVisible = (itemY + ClipboardConstants.itemHeight >= viewTop && itemY <= viewBottom);
+            isVisible = (itemY + thumbnail.rowHeight >= viewTop && itemY <= viewBottom);
 
             if (isVisible) {
                 tryLoadImage();
@@ -212,10 +213,10 @@ ClippingRectangle {
             if (thumbnail.disposed || entryType !== "image" || listView.height <= 0 || isVisible || !thumbnailImage.hasValidEntryId()) {
                 return;
             }
-            const itemY = itemIndex * (ClipboardConstants.itemHeight + listView.spacing);
+            const itemY = itemIndex * (thumbnail.rowHeight + listView.spacing);
             const viewTop = listView.contentY - ClipboardConstants.viewportBuffer;
             const viewBottom = viewTop + listView.height + ClipboardConstants.extendedBuffer;
-            const nowVisible = (itemY + ClipboardConstants.itemHeight >= viewTop && itemY <= viewBottom);
+            const nowVisible = (itemY + thumbnail.rowHeight >= viewTop && itemY <= viewBottom);
             if (nowVisible) {
                 isVisible = true;
                 tryLoadImage();

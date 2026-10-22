@@ -6,6 +6,8 @@ import qs.DCommon.Widgets
 DListItem {
     id: root
 
+    property bool compact: false
+
     required property var entry
     required property int itemIndex
     required property var modal
@@ -31,7 +33,7 @@ DListItem {
     readonly property bool showDeleteAction: visibleEntryActions.includes("delete")
     readonly property bool showPreviewAction: ClipboardService.canPreviewEntry(entry)
     readonly property bool showPinnedIndicator: effectivePinned && !showPinAction
-    readonly property bool showAnyAction: showCopyAction || showPasteAction || showPinAction || showEditAction || showDeleteAction || showPinnedIndicator || showPreviewAction
+    readonly property bool showAnyAction: !compact && (showCopyAction || showPasteAction || showPinAction || showEditAction || showDeleteAction || showPinnedIndicator || showPreviewAction)
 
     keyForwardTargets: [modal.modalFocusScope]
     firstInGroup: itemIndex === 0
@@ -39,6 +41,12 @@ DListItem {
     Accessible.name: entryPreview
     Accessible.description: entryType === "image" ? I18n.tr("Image") : I18n.tr("Text")
     onClicked: {
+        if (compact) {
+            ClipboardService.selectedIndex = itemIndex;
+            ClipboardService.keyboardNavigationActive = true;
+            modal.searchField.forceActiveFocus();
+            return;
+        }
         if (SettingsData.clipboardClickToPaste) {
             pasteRequested();
             return;
@@ -48,11 +56,11 @@ DListItem {
 
     Row {
         id: actionButtons
+        visible: root.showAnyAction
         anchors.right: parent.right
         anchors.rightMargin: Theme.spacingS
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.spacingXS
-        visible: root.showAnyAction
 
         DActionButton {
             Keys.forwardTo: [root.modal.modalFocusScope]
@@ -153,16 +161,17 @@ DListItem {
         anchors.right: root.showAnyAction ? actionButtons.left : parent.right
         anchors.rightMargin: root.showAnyAction ? Theme.spacingM : Theme.spacingS
         anchors.verticalCenter: parent.verticalCenter
-        height: ClipboardConstants.itemHeight
+        height: root.height
         clip: true
 
         ClipboardThumbnail {
             id: thumbnail
+            rowHeight: root.height
             iconColor: root.colorForRole(Theme.primary)
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            width: entryType === "image" ? ClipboardConstants.thumbnailSize : Theme.iconSize
-            height: entryType === "image" ? ClipboardConstants.itemHeight - Theme.spacingXS : Theme.iconSize
+            width: entryType === "image" && !root.compact ? ClipboardConstants.thumbnailSize : Theme.iconSize
+            height: entryType === "image" && !root.compact ? ClipboardConstants.itemHeight - Theme.spacingXS : Theme.iconSize
             entry: root.entry
             entryType: root.entryType
             modal: root.modal
@@ -179,6 +188,7 @@ DListItem {
             spacing: Theme.spacingXS
 
             StyledText {
+                visible: !root.compact
                 text: {
                     switch (entryType) {
                     case "image":
@@ -197,12 +207,18 @@ DListItem {
             }
 
             StyledText {
-                text: entryPreview
+                text: {
+                    if (root.compact && root.entryType === "image") {
+                        const dimensions = root.entryPreview.match(/(\d+)x(\d+)/);
+                        return dimensions ? I18n.tr("Image") + " (" + dimensions[1] + " × " + dimensions[2] + ")" : I18n.tr("Image");
+                    }
+                    return root.entryPreview;
+                }
                 font.pixelSize: Theme.fontSizeMedium
                 color: root.contentColor
                 width: parent.width
                 wrapMode: Text.WordWrap
-                maximumLineCount: entryType === "long_text" ? 3 : 1
+                maximumLineCount: !root.compact && entryType === "long_text" ? 3 : 1
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
             }
